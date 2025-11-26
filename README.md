@@ -28,8 +28,8 @@ Required Parameters
 - `--seq <ES|WGS>`: Sequencing type, `ES` for exome sequencing, `WGS` for whole genome sequencing  
 - `--bam <bam_file>`: Input BAM file(s) of the sample  
 - `--capture <capture.bed>`: Capture regions (`.bed`); required for `ES` sequencing type  
-- `--gene <gene_file>`: Target genes (e.g., protein-coding genes with clear genetic patterns in OMIM; default: `test_trans.tsv`)  
-- `--reference <reference_file>`: Gene annotation file (default: `genes.gtf`)  
+- `--gene <gene_file>`: Target genes (e.g., protein-coding genes with clear genetic patterns in OMIM)  
+- `--reference <reference_file>`: Gene annotation file 
 - `--out <outprefix>`: Output file prefix  
 Additional General Options  
 
@@ -57,8 +57,8 @@ Required Parameters
 - `--seq <ES|WGS>`: Sequencing type (`ES` for exome sequencing; `WGS` for whole-genome sequencing)  
 - `--bam <bam_file>`: Input BAM file of the sample  
 - `--capture <capture.bed>`: Capture regions (`.bed`); **required for `ES` sequencing type**  
-- `--gene <gene_file>`: Target genes (e.g., protein-coding genes with clear genetic patterns in OMIM; default: `test_trans.tsv`)  
-- `--reference <reference_file>`: Gene annotation file (default: `genes.gtf`)  
+- `--gene <gene_file>`: Target genes (e.g., protein-coding genes with clear genetic patterns in OMIM)  
+- `--reference <reference_file>`: Gene annotation file
 - `--out <outprefix>`: Output file prefix  
 
 Additional General Options  
@@ -88,10 +88,10 @@ Required Parameters
 - `--vcf <vcf_file>`: Input VCF file of the sample  
 - `--gvcf <gvcf_file>`: Input GVCF file of the sample  
 - `--capture <capture.bed>`: Capture regions (`.bed`); required for `ES` sequencing type  
-- `--ref-bed <ref_bed>`: Benchmark BED file; required for `WGS` sequencing type (default: `HG001_GRCh38_1_22_v4.2.1_benchmark.bed`)  
-- `--ref-vcf <ref_vcf>`: Reference dataset VCF file (required when `--sample-type` is `standard`; default: `HG001_GRCh38_1_22_v4.2.1_benchmark.vcf.gz`)  
-- `--ref-fasta <ref_fasta>`: Human reference genome FASTA file (default: `GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta`)  
-- `--pathogenic <pathogenic_file>`: Target variant sites (default: `clinvar.txt`)  
+- `--ref-bed <ref_bed>`: Benchmark BED file; required for `WGS` sequencing type
+- `--ref-vcf <ref_vcf>`: Reference dataset VCF file (required when `--sample-type` is `standard`)  
+- `--ref-fasta <ref_fasta>`: Human reference genome FASTA file  
+- `--pathogenic <pathogenic_file>`: Target variant sites
 - `--out <outprefix>`: Output file prefix  
 
 Additional General Options  
@@ -113,7 +113,7 @@ Required Parameters
 - `--seq <ES|WGS>`: Sequencing type (`ES` for exome sequencing; `WGS` for whole-genome sequencing)  
 - `--vcf <vcf_file>`: Input VCF file of the sample  
 - `--capture <capture.bed>`: Capture regions (`.bed`); **required for `ES` sequencing type**  
-- `--pathogenic <pathogenic_file>`: Target variant sites (default: `clinvar.txt`)  
+- `--pathogenic <pathogenic_file>`: Target variant sites
 - `--out <outprefix>`: Output file prefix
   
 Optional Parameters  
@@ -139,9 +139,9 @@ Required Parameters
 - `--bam <bam_file>`: Input BAM file of the sample  
 - `--vcf <vcf_file>`: Input VCF file of the sample  
 - `--capture <capture.bed>`: Capture regions (`.bed`); **required for `ES` sequencing type**  
-- `--gene <gene_file>`: Target genes (e.g., protein-coding genes with clear genetic patterns in OMIM; default: `test_trans.tsv`)  
-- `--reference <reference_file>`: Gene annotation file (default: `genes.gtf`)  
-- `--pathogenic <pathogenic_file>`: Target variant sites (default: `clinvar.txt`)  
+- `--gene <gene_file>`: Target genes (e.g., protein-coding genes with clear genetic patterns in OMIM)  
+- `--reference <reference_file>`: Gene annotation file
+- `--pathogenic <pathogenic_file>`: Target variant sites
 - `--out <outprefix>`: Output file prefix  
 
 Additional General Options  
@@ -157,9 +157,9 @@ Additional General Options
 - `--poor <float>`: Percentage of poorly-covered regions (default: `5.0`)  
 - `--chrom <string>`: Restrict analysis to regions on this chromosome  
 - `--regions <regions.bed>`: Additional regions for variant detection (optional)  
-- `--ref-bed <ref_bed>`: Benchmark BED file (required for `WGS` when `--sample-type` is `standard`; default: `HG001_GRCh38_1_22_v4.2.1_benchmark.bed`)  
-- `--ref-vcf <ref_vcf>`: Benchmark VCF file (required when `--sample-type` is `standard`; default: `HG001_GRCh38_1_22_v4.2.1_benchmark.vcf.gz`)  
-- `--ref-fasta <ref_fasta>`: Human reference genome FASTA file (required when `--sample-type` is `standard`; default: `GCA_000001405.15_GRCh38_no_alt_analysis_set.fasta`)  
+- `--ref-bed <ref_bed>`: Benchmark BED file (required for `WGS` when `--sample-type` is `standard`)  
+- `--ref-vcf <ref_vcf>`: Benchmark VCF file (required when `--sample-type` is `standard`)  
+- `--ref-fasta <ref_fasta>`: Human reference genome FASTA file (required when `--sample-type` is `standard`)  
 - `--gvcf <gvcf_file>`: Input GVCF file of the sample (**required when `--sample-type` is `standard`**)  
 - `-h, --help`: Show this help message
 
@@ -378,6 +378,6 @@ Sequencing quality for pathogenic variants in target regions.
 ## Reference Files
 - **Gene Annotation**: Derived from [GENCODE Release v47](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz).  
 - **Known Pathogenic Variants**: Derived from [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar).  
-- **NA12878 Benchmark Dataset**: Derived from [Genome in a Bottle (GIAB)](https://www.nist.gov/programs-projects/genome-bottle).  
+- **NA12878 Benchmark Dataset**: Derived from [Genome in a Bottle (GIAB)](https://www.nist.gov/programs-projects/genome-bottle).This dataset provides the necessary files for the `--ref-bed`, `--ref-vcf`, and `--ref-fasta` parameters. 
 ## Support
 For technical support or questions, please contact 24211240001@m.fudan.edu.cn
