@@ -1,0 +1,6 @@
+#capture	well	middle	poor	capture_total
+full	60	0	0	60
+partial	4	1	7	12
+near	0	0	0	0
+no	14	0	17	31
+coverage_total	78	1	24	103
