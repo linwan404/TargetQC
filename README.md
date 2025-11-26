@@ -376,6 +376,7 @@ Sequencing quality for pathogenic variants in target regions.
 | 6                  | BAF (B-allele freq)|  
 
 ## Reference Files
+- **Target Gene**: Derived from [OMIM](https://www.omim.org/).
 - **Gene Annotation**: Derived from [GENCODE Release v47](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz).  
 - **Known Pathogenic Variants**: Derived from [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar).  
 - **NA12878 Benchmark Dataset**: Derived from [Genome in a Bottle (GIAB)](https://www.nist.gov/programs-projects/genome-bottle).This dataset provides the necessary files for the `--ref-bed`, `--ref-vcf`, and `--ref-fasta` parameters. 
