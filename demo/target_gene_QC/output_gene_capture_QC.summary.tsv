@@ -1,0 +1,5 @@
+coverage_quality	all	all_percent	protein_coding	protein_coding_percent	pseudogene	pseudogene_percent	others	others_percent
+well_covered	11	57.89	9	90.00	2	50.00	0	0.00
+middle_covered	0	0.00	0	0.00	0	0.00	0	0.00
+poor_covered	8	42.11	1	10.00	2	50.00	5	100.00
+total	19	100.00	10	100.00	4	100.00	5	100.00
