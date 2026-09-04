@@ -1,0 +1,204 @@
+---
+title: "`r paste0('Quality Assessment Report of ', params$sample_name, ' Using TargetQC v1.1')`"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+    toc_float: true
+    number_sections: false
+params:
+  sample_name: "sample"
+  sample_type: "clinical"
+  assay_type: "ES"
+  platform: ""
+  outdir: "."
+  plot_dir: "figures"
+  prefix: "sample"
+  dp_high: 30
+  dp_low: 20
+  baf_threshold: 0.05
+  gene_level_range: "≥30X"
+  selected_gene_type: "protein_coding"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+suppressPackageStartupMessages({ library(knitr); library(kableExtra); library(DT); library(htmltools); library(readr); library(dplyr); library(stringr) })
+
+sample_name <- trimws(as.character(params$sample_name))
+sample_type <- tolower(trimws(as.character(params$sample_type)))
+assay_type <- toupper(trimws(as.character(params$assay_type)))
+platform <- trimws(as.character(params$platform))
+outdir <- path.expand(params$outdir)
+plot_dir <- path.expand(params$plot_dir)
+prefix <- trimws(as.character(params$prefix))
+dp_high <- as.numeric(params$dp_high)
+dp_low <- as.numeric(params$dp_low)
+baf_threshold <- as.numeric(params$baf_threshold)
+
+if (!sample_type %in% c("clinical", "standard")) stop("sample_type must be clinical or standard")
+if (!assay_type %in% c("ES", "WES", "EXOME", "WGS")) stop("assay_type must be ES/WES/EXOME or WGS")
+if (assay_type %in% c("WES", "EXOME")) assay_type <- "ES"
+
+file_of <- function(suffix) file.path(outdir, paste0(prefix, suffix))
+figure_candidates <- function(names) unique(c(file.path(plot_dir, paste0(prefix, "_", names)), file.path(plot_dir, names), file.path(outdir, paste0(prefix, "_", names)), file.path(outdir, names)))
+clean_names <- function(x) { x <- sub("^#", "", x); x <- gsub("^X\\.30X$|^X\\.\\.30X$", "≥30X", x); x <- gsub("^X\\.20X$|^X\\.\\.20X$", "≥20X", x); x <- gsub("^X\\.10X$|^X\\.\\.10X$", "≤10X", x); x <- gsub("^X10\\.20X$|^X10_20X$|^X10-20X$", "10-20X", x); x <- gsub("^X20\\.30X$|^X20_30X$|^X20-30X$", "20-30X", x); x }
+read_targetqc_tsv <- function(file_path) { if (!file.exists(file_path)) return(NULL); first <- readLines(file_path, n = 1, warn = FALSE); if (length(first) == 0) return(NULL); first <- sub("^\ufeff", "", first); if (substr(first, 1, 1) == "#") { cols <- strsplit(sub("^#", "", first), "\t")[[1]]; dat <- readr::read_tsv(file_path, skip = 1, col_names = cols, col_types = cols(.default = col_character()), show_col_types = FALSE, progress = FALSE) } else { dat <- readr::read_tsv(file_path, col_types = cols(.default = col_character()), show_col_types = FALSE, progress = FALSE) }; dat <- as.data.frame(dat, check.names = FALSE, stringsAsFactors = FALSE); colnames(dat) <- clean_names(colnames(dat)); dat }
+notice_tag <- function(text) tags$div(style = "padding:12px;margin:10px 0;border-left:4px solid #e0a800;background:#fff8df;font-size:13pt;", text)
+paragraph_tag <- function(...) tags$p(style = "font-size:14pt;line-height:1.55;", ...)
+static_table_tag <- function(dat) { if (is.null(dat) || nrow(dat) == 0) return(notice_tag("No data available.")); HTML(as.character(kableExtra::kbl(dat, format = "html", escape = TRUE, align = "c") %>% kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE, position = "center", font_size = 14) %>% kableExtra::row_spec(0, bold = TRUE))) }
+render_dt_table <- function(prefix_unused, suffix, search_label = "Search:", search_placeholder = "Enter keywords to search") { dat <- read_targetqc_tsv(file_of(suffix)); if (is.null(dat) || nrow(dat) == 0) return(notice_tag(paste0("No data available: ", basename(file_of(suffix))))); DT::datatable(dat, extensions = c("Buttons", "Scroller"), options = list(dom = "Bfrtip", buttons = c("copy", "csv", "excel"), scrollX = TRUE, scrollY = 550, scroller = TRUE, pageLength = 25, searchHighlight = TRUE, language = list(search = search_label, searchPlaceholder = search_placeholder)), filter = "top", rownames = FALSE) }
+render_image <- function(prefix_unused, candidates, width = "70%") { files <- figure_candidates(candidates); hit <- files[file.exists(files)][1]; if (is.na(hit) || !nzchar(hit)) return(notice_tag(paste0("No figure available. Checked: ", paste(basename(files), collapse = ", ")))); tags$div(tags$img(src = knitr::image_uri(hit), style = paste0("display:block;width:", width, ";max-width:100%;height:auto;margin:15px auto;border:1px solid #eeeeee;"))) }
+sequencing_name <- if (assay_type == "ES") "Exome Sequencing (ES)" else "Whole Genome Sequencing (WGS)"
+target_region_description <- if (assay_type == "ES") "the user-provided capture regions" else "whole-genome or target gene-derived regions, depending on the executed TargetQC command"
+module_name <- if (sample_type == "standard") "Variant Calling QC" else "Variant Capture QC"
+```
+
+## **Sample Information**
+
+```{r sample_information}
+sample_information <- data.frame(Item = c("Sample", "Sample type", "Platform", "Sequencing type", "Output prefix"), Value = c(sample_name, tools::toTitleCase(sample_type), ifelse(nzchar(platform), platform, "Not specified"), sequencing_name, prefix), stringsAsFactors = FALSE)
+static_table_tag(sample_information)
+```
+
+## **Introduction**
+
+<span style="font-size:14pt;line-height:1.55;">
+This report uses TargetQC to evaluate the quality of `r sample_name`. The report reads the direct output files generated by `TargetQC.sh --sample-type ` `r sample_type` from one output directory and does not separate results by sex or by chromosome group. The evaluation covers Target Exon QC, Target Gene QC, and `r module_name`.
+</span>
+
+## **Target Exon QC**
+
+<span style="font-size:14pt;line-height:1.55;">
+This section evaluates how well target regions are covered by sequencing data. In this report, the target regions are `r target_region_description`. Coverage thresholds are read directly from the TargetQC output table.
+</span>
+
+### **Base distribution across coverage thresholds**
+
+<span style="font-size:14pt;">**Table**: Coverage threshold, target-region size, average coverage, region size meeting the threshold, and percentage.</span>
+
+```{r exon_base_table}
+render_dt_table(prefix, "_base.tsv", search_label = "Search:", search_placeholder = "Coverage threshold or metric was entered")
+```
+
+<span style="font-size:14pt;">**Figure**: Percentage of target regions meeting each coverage threshold.</span>
+
+```{r exon_base_figure, out.width="70%", fig.align="center"}
+render_image(prefix, candidates = c("plot1_a.png"))
+```
+
+### **Qualified exons**
+
+<span style="font-size:14pt;">**Table**: Chromosome position, coverage, coverage classification, capture classification, and related exon-level QC fields.</span>
+
+```{r exon_detail_table}
+render_dt_table(prefix, "_exon_capture_QC.tsv", search_label = "Search:", search_placeholder = "Chromosome position, coverage, or classification was entered")
+```
+
+### **Exon summary**
+
+<span style="font-size:14pt;">**Table**: Counts of well-covered, middle-covered, and poor-covered exons.</span>
+
+```{r exon_summary_table}
+render_dt_table(prefix, "_exon_capture_QC.summary.tsv", search_label = "Search:", search_placeholder = "Capture or coverage category was entered")
+```
+
+<span style="font-size:14pt;">**Figure**: Overall exon coverage classification.</span>
+
+```{r exon_summary_figure, out.width="70%", fig.align="center"}
+render_image(prefix, candidates = c("qualified_exons.png"))
+```
+
+## **Target Gene QC**
+
+<span style="font-size:14pt;line-height:1.55;">
+This module evaluates gene-level coverage. The proportions of bases in coverage ranges such as ≥30X, 20–30X, and ≤20X are calculated for target transcripts and coding regions.
+</span>
+
+### **Coverage range proportions**
+
+<span style="font-size:14pt;">**Target-transcript table**: Gene ID, gene name, gene type, transcript ID, and coverage-range proportions.</span>
+
+```{r trans_table}
+render_dt_table(prefix, "_trans.tsv", search_label = "Search:", search_placeholder = "Gene name or transcript ID was entered")
+```
+
+<span style="font-size:14pt;">**Coding-region table**: Coverage-range proportions for coding regions.</span>
+
+```{r cds_table}
+render_dt_table(prefix, "_trans_cds.tsv", search_label = "Search:", search_placeholder = "Gene name or transcript ID was entered")
+```
+
+<span style="font-size:14pt;">**Figure**: Gene coverage cumulative curve.</span>
+
+```{r gene_cdf_figure, out.width="70%", fig.align="center"}
+render_image(prefix, candidates = c("gene_all.png"))
+```
+
+### **Qualified genes**
+
+<span style="font-size:14pt;">Well-covered and poor-covered genes are classified according to the thresholds passed to TargetQC.</span>
+
+```{r gene_detail_table}
+render_dt_table(prefix, "_gene_capture_QC.tsv", search_label = "Search:", search_placeholder = "Gene name or coverage category was entered")
+```
+
+### **Gene summary**
+
+<span style="font-size:14pt;">**Table**: Counts and percentages of well-covered, middle-covered, and poor-covered genes.</span>
+
+```{r gene_summary_table}
+render_dt_table(prefix, "_gene_capture_QC.summary.tsv", search_label = "Search:", search_placeholder = "Coverage category or gene category was entered")
+```
+
+<span style="font-size:14pt;">**Figure**: Gene coverage classification summary.</span>
+
+```{r gene_summary_figure, out.width="70%", fig.align="center"}
+render_image(prefix, candidates = c("gene_percent_all.png"))
+```
+
+```{r variant_clinical_section, results='asis', eval=sample_type == "clinical"}
+cat('\n\n## **Variant Capture QC**\n\n')
+cat('<span style="font-size:14pt;line-height:1.55;">This module evaluates clinically relevant variant sites using sequencing depth and B-allele frequency. The table and figures are read directly from the clinical TargetQC output.</span>\n\n')
+cat('### **Known pathogenic variants quality**\n\n')
+cat('<span style="font-size:14pt;">**Table**: Chromosome position, variant type, genotype, DP, BAF, and other available fields.</span>\n\n')
+print(render_dt_table(prefix, "_variant_capture_QC.tsv", search_label = "Search:", search_placeholder = "Chromosome location or variant type was entered"))
+cat('\n\n### **DP statistics**\n\n')
+cat('<span style="font-size:14pt;">**Figure**: Visualizes DP percentages.</span>\n\n')
+print(render_image(prefix, candidates = c("variant_capture_QC_plot_DP.png")))
+cat('\n\n### **BAF deviation**\n\n')
+cat('<span style="font-size:14pt;">BAF deviation for homozygous and heterozygous SNVs/indels. The figure displays BAF deviations and abnormal site percentages.</span>\n\n')
+print(render_image(prefix, candidates = c("variant_capture_QC_plot_BAF.png")))
+if (file.exists(file_of("_region_variant_capture_QC.tsv"))) { cat('\n\n### **In target regions (if added "regions" option)**\n\n'); print(render_dt_table(prefix, "_region_variant_capture_QC.tsv", search_label = "Search:", search_placeholder = "Chromosome location or variant type was entered")); print(render_image(prefix, candidates = c("region_variant_capture_QC_plot_DP.png"))); print(render_image(prefix, candidates = c("region_variant_capture_QC_plot_BAF.png"))) }
+```
+
+```{r variant_standard_section, results='asis', eval=sample_type == "standard"}
+cat('\n\n## **Variant Calling QC**\n\n')
+cat('<span style="font-size:14pt;">This module evaluates key variant sites using sequencing depth (DP) and B-allele frequency (BAF), focusing on pathogenic/likely pathogenic (p/lp) and disease-causing mutation (DM) sites from ClinVar and HGMD.</span>\n\n')
+cat('### **Benchmark**\n\n')
+cat('<span style="font-size:14pt;">Lists detected clinical key sites with details.</span>\n\n')
+cat('<span style="font-size:14pt;">**Table**: Columns: variant type, TP, FN, FP, Recall, Precision, F1_Score.</span>\n\n')
+print(render_dt_table(prefix, "_variant_calling.summary.tsv", search_label = "Search:", search_placeholder = "Chromosome location or variant type was entered"))
+cat('\n\n### **Known pathogenic variants quality**\n\n')
+cat('<span style="font-size:14pt;">Lists detected clinical key sites with details.</span>\n')
+cat('<span style="font-size:14pt;">**Table**: Columns: chromosome position, variant type, genotype, DP, BAF.</span>\n\n')
+print(render_dt_table(prefix, "_variant_calling_QC.tsv", search_label = "Search:", search_placeholder = "Chromosome location or variant type was entered"))
+cat('\n\n### **DP statistics**\n\n')
+cat('<span style="font-size:14pt;">**Figure**: Visualizes DP percentages.</span>\n\n')
+print(render_image(prefix, candidates = c("variant_calling_QC_plot_DP_TP_FN.png")))
+cat('\n\n### **BAF deviation**\n\n')
+cat('<span style="font-size:14pt;">BAF deviation for homozygous (hom) and heterozygous (het) SNVs/indels.</span>\n\n')
+cat('<span style="font-size:14pt;">**Figure**: Displays BAF deviations and abnormal site percentages.</span>\n\n')
+print(render_image(prefix, candidates = c("variant_calling_QC_plot_BAF_TP_FP.png")))
+cat('\n\n### **Missed known pathogenic variants**\n\n')
+cat('<span style="font-size:14pt;">Lists missed known pathogenic variants with details.</span>\n\n')
+cat('<span style="font-size:14pt;">**Table**: Columns: chrom, pos, clinical.</span>\n\n')
+print(render_dt_table(prefix, "_pathogenic.tsv", search_label = "Search:", search_placeholder = "Chromosome location or clinical annotation was entered"))
+if (file.exists(file_of("_region_variant_calling_QC.tsv"))) { cat('\n\n### **In target regions (if added "regions" option)**\n\n'); cat('<span style="font-size:14pt;">Quality data for clinical pathogenic variants detected in target regions.</span>\n\n'); cat('<span style="font-size:14pt;">**Table**: Lists variants in target regions.</span>\n\n'); print(render_dt_table(prefix, "_region_variant_calling_QC.tsv", search_label = "Search:", search_placeholder = "Chromosome location or variant type was entered")); cat('<span style="font-size:14pt;">**Figures**: Visualize variant quality metrics.</span>\n\n'); print(render_image(prefix, candidates = c("region_variant_calling_QC_plot_DP_TP_FN.png", "region_variant_capture_QC_plot_DP.png"))); print(render_image(prefix, candidates = c("region_variant_calling_QC_plot_BAF_TP_FP.png", "region_variant_capture_QC_plot_BAF.png"))) }
+```
+
+## **Conclusion**
+
+<span style="font-size:14pt;line-height:1.55;">
+This report applies the TargetQC v1.1 framework to summarize the sequencing quality of sample `r sample_name` using one unified output prefix. It avoids sex-specific and chromosome-group-specific branching, and it displays the variant module according to the actual sample type: clinical samples use Variant Capture QC, whereas standard benchmark samples use Variant Calling QC.
+</span>
